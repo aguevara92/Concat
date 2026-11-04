@@ -5218,6 +5218,11 @@ impl Studio {
                 }
                 ClipField::StrokeWidth => text.stroke_width = value.clamp(0.0, 0.15),
                 ClipField::Shadow => text.shadow = value != 0.0,
+                ClipField::ShadowOpacity => text.shadow_opacity = value.clamp(0.0, 1.0),
+                ClipField::ShadowDistance => text.shadow_distance = value.clamp(0.0, 2.0),
+                ClipField::ShadowAngle => text.shadow_angle = value.clamp(-180.0, 180.0),
+                ClipField::ShadowBlur => text.shadow_blur = value.clamp(0.0, 1.0),
+                ClipField::ShadowSpread => text.shadow_spread = value.clamp(0.0, 1.0),
                 ClipField::LineHeight => text.line_height = value.clamp(0.7, 2.5),
                 ClipField::Tracking => text.tracking = value.clamp(-0.05, 0.3),
                 ClipField::TextWidth => text.max_width = value.clamp(0.0, 2.0),
@@ -5446,6 +5451,7 @@ impl Studio {
                 ClipTextField::Color => text.color = hex_of(value),
                 ClipTextField::StrokeColor => text.stroke_color = hex_rgba(value),
                 ClipTextField::Background => text.background = hex_with_alpha(value),
+                ClipTextField::ShadowColor => text.shadow_color = hex_of(value),
                 _ => {}
             }
         }
@@ -10284,6 +10290,12 @@ impl Studio {
             stroke_hex: hex_of(stroke).into(),
             stroke_opacity: f32::from(stroke.alpha()) / 255.0,
             shadow: text.shadow,
+            shadow_color: colour_of(&text.shadow_color),
+            shadow_opacity: text.shadow_opacity as f32,
+            shadow_distance: text.shadow_distance as f32,
+            shadow_angle: text.shadow_angle as f32,
+            shadow_blur: text.shadow_blur as f32,
+            shadow_spread: text.shadow_spread as f32,
             plate,
             plate_hex: hex_of(plate).into(),
             plated: plate.alpha() > 0,

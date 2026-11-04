@@ -59,6 +59,11 @@ export component TextPanel inherits VerticalLayout {
     property <float> stroke-width;
     property <float> stroke-alpha;
     property <float> plate-alpha;
+    property <float> shadow-alpha;
+    property <float> shadow-distance;
+    property <float> shadow-angle;
+    property <float> shadow-blur;
+    property <float> shadow-spread;
     property <float> plate-radius;
     /// The background's air, in pixels of the frame like the box's sides.
     property <float> plate-pad-x;
@@ -94,6 +99,11 @@ export component TextPanel inherits VerticalLayout {
         root.stroke-width = root.selected.stroke-width;
         root.stroke-alpha = root.selected.stroke-opacity;
         root.plate-alpha = root.selected.plate-opacity;
+        root.shadow-alpha = root.selected.shadow-opacity;
+        root.shadow-distance = root.selected.shadow-distance;
+        root.shadow-angle = root.selected.shadow-angle;
+        root.shadow-blur = root.selected.shadow-blur;
+        root.shadow-spread = root.selected.shadow-spread;
         root.plate-radius = root.selected.plate-radius;
         root.plate-pad-x = root.selected.plate-padding-x * root.frame-h;
         root.plate-pad-y = root.selected.plate-padding-y * root.frame-h;
@@ -377,6 +387,80 @@ export component TextPanel inherits VerticalLayout {
             HelpButton { text: I18n.t("textPanel.softShadowUnderWords"); }
 
             toggled(on) => { root.set(ClipField.shadow, on ? 1 : 0); root.commit(); }
+        }
+
+        // The shadow's own dials, under its switch. Distance and blur are
+        // fractions of the em, like the old fixed offset, so a shadow keeps
+        // its proportion when the words are resized.
+        if root.selected.shadow: ColourField {
+            label: I18n.t("textPanel.shadowColor");
+            value: root.selected.shadow-color;
+            alpha: false;
+            changed(colour) => { root.set-colour(ClipTextField.shadow-color, colour); root.commit(); }
+        }
+
+        if root.selected.shadow: Param {
+            label: I18n.t("textPanel.shadowOpacity");
+            value <=> root.shadow-alpha;
+            minimum: 0;
+            maximum: 1;
+            step: 0.01;
+            default-value: 0.588;
+            fmt: ParamFormat.fraction;
+            unit: "%";
+            unit-scale: 100;
+            changed(v) => { root.set(ClipField.shadow-opacity, v); root.commit(); }
+        }
+
+        if root.selected.shadow: Param {
+            label: I18n.t("textPanel.shadowDistance");
+            value <=> root.shadow-distance;
+            minimum: 0;
+            maximum: 1;
+            step: 0.005;
+            default-value: 0.086;
+            fmt: ParamFormat.fraction;
+            unit: "%";
+            unit-scale: 100;
+            changed(v) => { root.set(ClipField.shadow-distance, v); root.commit(); }
+        }
+
+        if root.selected.shadow: Param {
+            label: I18n.t("textPanel.shadowAngle");
+            value <=> root.shadow-angle;
+            minimum: -180;
+            maximum: 180;
+            step: 1;
+            default-value: 54.46;
+            fmt: ParamFormat.degrees;
+            unit: "°";
+            changed(v) => { root.set(ClipField.shadow-angle, v); root.commit(); }
+        }
+
+        if root.selected.shadow: Param {
+            label: I18n.t("textPanel.shadowBlur");
+            value <=> root.shadow-blur;
+            minimum: 0;
+            maximum: 0.5;
+            step: 0.005;
+            default-value: 0.04;
+            fmt: ParamFormat.fraction;
+            unit: "%";
+            unit-scale: 100;
+            changed(v) => { root.set(ClipField.shadow-blur, v); root.commit(); }
+        }
+
+        if root.selected.shadow: Param {
+            label: I18n.t("textPanel.shadowSpread");
+            value <=> root.shadow-spread;
+            minimum: 0;
+            maximum: 0.5;
+            step: 0.005;
+            default-value: 0;
+            fmt: ParamFormat.fraction;
+            unit: "%";
+            unit-scale: 100;
+            changed(v) => { root.set(ClipField.shadow-spread, v); root.commit(); }
         }
 
         // The background: the plate, to the painter and the document. A

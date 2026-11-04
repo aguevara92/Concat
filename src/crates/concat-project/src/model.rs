@@ -1442,6 +1442,17 @@ impl Default for ShapeStyle {
     }
 }
 
+/// The drop shadow every title had before its shadow had dials: black at 150
+/// of 255, 0.05 em across and 0.07 em down, blurred by 0.04 em. A document
+/// from before then reads these, so it looks as it always did.
+pub const SHADOW_OPACITY: f64 = 150.0 / 255.0;
+/// `hypot(0.05, 0.07)`, in em.
+pub const SHADOW_DISTANCE: f64 = 0.086_023_252_670_426_27;
+/// `atan2(0.07, 0.05)` in degrees, clockwise from right.
+pub const SHADOW_ANGLE: f64 = 54.462_322_208_025_62;
+/// In em.
+pub const SHADOW_BLUR: f64 = 0.04;
+
 /// A title's styling. Sizes are fractions of the frame, so a title composed
 /// against 1080p lands correctly exported at 4K. A style arriving in a
 /// command needs only the fields it changes; the rest are the default's, so
@@ -1479,6 +1490,25 @@ pub struct TextStyle {
     pub stroke_color: String,
     /// A drop shadow for legibility over footage. On by default.
     pub shadow: bool,
+    /// The shadow's colour, `#rrggbb`. Black by default.
+    pub shadow_color: String,
+    /// How solid the shadow is, 0..=1. The default, 150 of 255, is the
+    /// shadow every title wore before it had a dial.
+    pub shadow_opacity: f64,
+    /// How far the shadow falls from the words, as a fraction of the em, so
+    /// it keeps its proportion at any size. The default is the offset every
+    /// shadow had before it was a dial: 0.05 em across and 0.07 em down.
+    pub shadow_distance: f64,
+    /// Which way it falls, in degrees clockwise from straight right: 90 is
+    /// straight down. The default is the old offset's direction.
+    pub shadow_angle: f64,
+    /// How soft its edge is, as a fraction of the em; zero is a hard copy
+    /// of the words. 0.04 em by default, as before.
+    pub shadow_blur: f64,
+    /// How far the shadow is thickened past the letters before it is
+    /// blurred, as a fraction of the em: a wide soft shadow that stays dark
+    /// rather than fading out. Zero by default, as before.
+    pub shadow_spread: f64,
     /// A solid background behind the text, `#rrggbb[aa]`; its alpha is the
     /// background's opacity. Empty string for none. The painter and older
     /// comments call it the plate.
@@ -1534,6 +1564,11 @@ impl TextStyle {
         self.tracking = finite(self.tracking, base.tracking);
         self.max_width = finite(self.max_width, base.max_width).max(0.0);
         self.max_height = finite(self.max_height, base.max_height).max(0.0);
+        self.shadow_opacity = finite(self.shadow_opacity, base.shadow_opacity).clamp(0.0, 1.0);
+        self.shadow_distance = finite(self.shadow_distance, base.shadow_distance).clamp(0.0, 2.0);
+        self.shadow_angle = finite(self.shadow_angle, base.shadow_angle);
+        self.shadow_blur = finite(self.shadow_blur, base.shadow_blur).clamp(0.0, 1.0);
+        self.shadow_spread = finite(self.shadow_spread, base.shadow_spread).clamp(0.0, 1.0);
         self.background_radius = finite(self.background_radius, base.background_radius).max(0.0);
         self.background_padding_x =
             finite(self.background_padding_x, base.background_padding_x).max(0.0);
@@ -1557,6 +1592,12 @@ impl Default for TextStyle {
             stroke_width: 0.0,
             stroke_color: "#000000".to_owned(),
             shadow: true,
+            shadow_color: "#000000".to_owned(),
+            shadow_opacity: SHADOW_OPACITY,
+            shadow_distance: SHADOW_DISTANCE,
+            shadow_angle: SHADOW_ANGLE,
+            shadow_blur: SHADOW_BLUR,
+            shadow_spread: 0.0,
             background: String::new(),
             background_radius: 0.0135,
             background_padding_x: 0.0315,

@@ -102,6 +102,12 @@ struct PresetStyle {
     stroke_width: Option<f64>,
     stroke_color: Option<String>,
     shadow: Option<bool>,
+    shadow_color: Option<String>,
+    shadow_opacity: Option<f64>,
+    shadow_distance: Option<f64>,
+    shadow_angle: Option<f64>,
+    shadow_blur: Option<f64>,
+    shadow_spread: Option<f64>,
     background: Option<String>,
     background_radius: Option<f64>,
     background_padding_x: Option<f64>,
@@ -136,6 +142,18 @@ impl PresetStyle {
             stroke_width: self.stroke_width.unwrap_or(0.0).max(0.0),
             stroke_color: self.stroke_color.unwrap_or(base.stroke_color),
             shadow: self.shadow.unwrap_or(true),
+            shadow_color: self.shadow_color.unwrap_or(base.shadow_color),
+            shadow_opacity: self
+                .shadow_opacity
+                .unwrap_or(base.shadow_opacity)
+                .clamp(0.0, 1.0),
+            shadow_distance: self
+                .shadow_distance
+                .unwrap_or(base.shadow_distance)
+                .clamp(0.0, 2.0),
+            shadow_angle: self.shadow_angle.unwrap_or(base.shadow_angle),
+            shadow_blur: self.shadow_blur.unwrap_or(base.shadow_blur).clamp(0.0, 1.0),
+            shadow_spread: self.shadow_spread.unwrap_or(0.0).clamp(0.0, 1.0),
             background: self.background.unwrap_or_default(),
             background_radius: self
                 .background_radius

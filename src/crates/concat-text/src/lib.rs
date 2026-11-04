@@ -59,6 +59,17 @@ pub enum Align {
 /// Everything about a title's look. Mirrors the document's text style field
 /// for field so the host can copy it across; this crate does not depend on
 /// the document.
+/// The drop shadow every title had before its shadow had dials, in
+/// [`TitleStyle`]'s terms: black at 150 of 255, 0.05 em across and 0.07 em
+/// down (as a distance and an angle), blurred by 0.04 em.
+pub const SHADOW_OPACITY: f64 = 150.0 / 255.0;
+/// `hypot(0.05, 0.07)`, in em.
+pub const SHADOW_DISTANCE: f64 = 0.086_023_252_670_426_27;
+/// `atan2(0.07, 0.05)` in degrees, clockwise from right.
+pub const SHADOW_ANGLE: f64 = 54.462_322_208_025_62;
+/// In em.
+pub const SHADOW_BLUR: f64 = 0.04;
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct TitleStyle {
     /// The words, newlines included.
@@ -81,6 +92,19 @@ pub struct TitleStyle {
     pub stroke_color: String,
     /// A soft drop shadow behind the words.
     pub shadow: bool,
+    /// The shadow's colour, `#rrggbb`.
+    pub shadow_color: String,
+    /// How solid the shadow is, 0..=1.
+    pub shadow_opacity: f64,
+    /// How far it falls from the words, as a fraction of the em.
+    pub shadow_distance: f64,
+    /// Which way it falls, degrees clockwise from straight right.
+    pub shadow_angle: f64,
+    /// How soft its edge is, as a fraction of the em.
+    pub shadow_blur: f64,
+    /// How far it is thickened past the letters before the blur, as a
+    /// fraction of the em.
+    pub shadow_spread: f64,
     /// A plate behind the block, `#rrggbb[aa]`; empty for none.
     pub background: String,
     /// The plate's corner radius as a fraction of frame height; zero is
@@ -1483,10 +1507,27 @@ fn paint(
             anti_alias: true,
             ..Paint::default()
         };
-        shade.set_color(Color::from_rgba8(0, 0, 0, 150));
-        let offset = Transform::from_translate(em * 0.05, em * 0.07);
+        let mut tint = colour(&style.shadow_color).unwrap_or(Color::BLACK);
+        tint.apply_opacity(style.shadow_opacity.clamp(0.0, 1.0) as f32);
+        shade.set_color(tint);
+        let angle = (style.shadow_angle as f32).to_radians();
+        let reach = em * style.shadow_distance.max(0.0) as f32;
+        let offset = Transform::from_translate(reach * angle.cos(), reach * angle.sin());
         layer.fill_path(words, &shade, FillRule::Winding, offset, None);
-        blur(&mut layer, (em * 0.04).round().max(1.0) as usize);
+        let spread = em * style.shadow_spread.max(0.0) as f32;
+        if spread > 0.0 {
+            // An outline twice the spread wide, centred on the letters'
+            // edge, grows them by the spread on every side.
+            let edge = Stroke {
+                width: 2.0 * spread,
+                line_join: LineJoin::Round,
+                ..Stroke::default()
+            };
+            layer.stroke_path(words, &shade, &edge, offset, None);
+        }
+        if style.shadow_blur > 0.0 {
+            blur(&mut layer, (em * style.shadow_blur as f32).round().max(1.0) as usize);
+        }
         canvas.draw_pixmap(
             0,
             0,
@@ -1918,6 +1959,12 @@ mod tests {
             stroke_width: 0.0,
             stroke_color: "#000000".to_owned(),
             shadow: true,
+            shadow_color: "#000000".to_owned(),
+            shadow_opacity: SHADOW_OPACITY,
+            shadow_distance: SHADOW_DISTANCE,
+            shadow_angle: SHADOW_ANGLE,
+            shadow_blur: SHADOW_BLUR,
+            shadow_spread: 0.0,
             background: String::new(),
             background_radius: 0.0135,
             background_padding_x: 0.0315,

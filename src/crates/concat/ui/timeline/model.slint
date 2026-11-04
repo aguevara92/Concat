@@ -170,6 +170,9 @@ export enum ClipField {
     font-size, font-weight, italic, text-opacity, align,
     stroke-width, shadow, line-height, tracking, text-width, text-height,
     stroke-opacity,
+    /// the drop shadow's dials: opacity 0..1, distance and blur as
+    /// fractions of the em, angle in degrees clockwise from right
+    shadow-opacity, shadow-distance, shadow-angle, shadow-blur, shadow-spread,
     /// the background's opacity is its colour's alpha, as the stroke's is;
     /// its corner radius is a fraction of frame height
     background-opacity, background-radius,
@@ -317,7 +320,7 @@ export global Backdrop {
 
 /// The same again for the properties that are text rather than numbers.
 export enum ClipTextField {
-    content, font-family, color, stroke-color, background,
+    content, font-family, color, stroke-color, background, shadow-color,
 }
 
 /// The selected clip, flattened for the inspector.
@@ -494,6 +497,15 @@ export struct SelectedClipData {
     /// the stroke colour's alpha, 0..1, as its own dial
     stroke-opacity: float,
     shadow: bool,
+    shadow-color: color,
+    /// 0..1
+    shadow-opacity: float,
+    /// fractions of the em
+    shadow-distance: float,
+    shadow-blur: float,
+    shadow-spread: float,
+    /// degrees clockwise from straight right
+    shadow-angle: float,
     /// the background behind the words - the plate, to the painter; fully
     /// transparent means none
     plate: color,
