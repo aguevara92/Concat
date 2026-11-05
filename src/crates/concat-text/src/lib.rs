@@ -1546,10 +1546,12 @@ fn paint(
         && let Some(words) = &words
     {
         paint.set_color(edge);
+        // Butt caps: glyph contours are closed, so a cap can only land on a
+        // zero-length piece of path, where a round one draws a loose disc.
         let stroke = Stroke {
             width: stroke_w * 2.0,
             line_join: LineJoin::Round,
-            line_cap: LineCap::Round,
+            line_cap: LineCap::Butt,
             ..Stroke::default()
         };
         canvas.stroke_path(words, &paint, &stroke, Transform::identity(), None);
@@ -1973,6 +1975,49 @@ mod tests {
             tracking: 0.0,
             max_width: 0.0,
             max_height: 0.0,
+        }
+    }
+
+    /// A hairline outline must not leave loose dots: a closed glyph contour
+    /// has no ends to cap, so any dot the outline draws belongs to a
+    /// zero-length piece of path, which a round cap turns into a disc of its
+    /// own, detached from every letter.
+    #[test]
+    fn a_thin_outline_leaves_no_loose_pixels() {
+        let fonts = Fonts::new();
+        for family in ["Helvetica", "Arial", BUNDLED_FAMILY] {
+            let mut look = style("Nobody expects\na bag this pretty\nto do that");
+            look.font_family = family.to_owned();
+            look.font_weight = 400.0;
+            look.font_size = 0.0426;
+            look.shadow = false;
+            look.stroke_width = 0.0006;
+            look.stroke_color = "#ffffff".to_owned();
+            let frame = render_frame(&fonts, &look, 1080, 1920).expect("renders");
+            let (w, h) = (frame.width as i64, frame.height as i64);
+            let solid = |x: i64, y: i64| {
+                x >= 0 && y >= 0 && x < w && y < h && frame.rgba[((y * w + x) * 4 + 3) as usize] > 128
+            };
+            let mut loose = Vec::new();
+            for y in 0..h {
+                for x in 0..w {
+                    if !solid(x, y) {
+                        continue;
+                    }
+                    let mut near = 0;
+                    for dy in -3..=3 {
+                        for dx in -3..=3 {
+                            if solid(x + dx, y + dy) {
+                                near += 1;
+                            }
+                        }
+                    }
+                    if near <= 6 {
+                        loose.push((x, y));
+                    }
+                }
+            }
+            assert!(loose.is_empty(), "{family}: loose pixels at {loose:?}");
         }
     }
 
